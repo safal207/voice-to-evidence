@@ -26,6 +26,7 @@ A small Python package + CLI that:
 1. Takes a structured JSON intake describing one AI-agent action.
 2. Validates the required fields.
 3. Renders a Markdown **Agent Action Audit Snapshot** draft for human review.
+4. Optionally extracts a draft intake from a lightly structured transcript.
 
 The MVP flow it captures:
 
@@ -41,9 +42,13 @@ voice / transcript
   -> Agent Action Audit Snapshot draft
 ```
 
-In this MVP, the first steps (voice → structured intake) are done by a human
-or by upstream tooling. This repo handles **structured intake → Snapshot
-draft**, deterministically and with no external API calls.
+In this MVP, raw voice transcription is still outside the core. The deterministic path is:
+
+```
+lightly structured transcript -> intake draft -> validated IntakeRecord -> Snapshot draft
+```
+
+No external API calls are required.
 
 ## Why this matters
 
@@ -67,6 +72,12 @@ Safety review needs a stable artifact:
 ```
 intake.json  ──►  IntakeRecord  ──►  render_snapshot()  ──►  Snapshot.md
                   (validated)                              (human review)
+```
+
+Transcript draft flow:
+
+```
+transcript.txt -> extract_intake_from_transcript() -> IntakeRecord -> Snapshot.md
 ```
 
 ## Example
@@ -108,8 +119,20 @@ that require human approval in the support console.
 **Recommendation (draft):** `ESCALATE`
 ```
 
-A complete example lives in [`docs/SAMPLE_SESSION.md`](docs/SAMPLE_SESSION.md)
-and [`docs/SNAPSHOT_OUTPUT.md`](docs/SNAPSHOT_OUTPUT.md).
+Transcript example — `examples/transcript_example.txt`:
+
+```text
+Workflow: customer_refund_processing
+Action: Agent issued a $480 refund without prior human approval.
+Permission boundary: Refunds above $100 require human approval.
+Missing evidence:
+- Approval record from human reviewer
+Recommendation: ESCALATE
+```
+
+A complete example lives in [`docs/SAMPLE_SESSION.md`](docs/SAMPLE_SESSION.md),
+[`docs/SNAPSHOT_OUTPUT.md`](docs/SNAPSHOT_OUTPUT.md), and
+[`docs/TRANSCRIPT_EXTRACTION.md`](docs/TRANSCRIPT_EXTRACTION.md).
 
 ## Relationship to Agent Action Audit Snapshot
 
@@ -127,12 +150,27 @@ Requires Python 3.9+. No third-party runtime dependencies.
 git clone https://github.com/safal207/voice-to-evidence.git
 cd voice-to-evidence
 
-# Run the CLI on the bundled example
+# Run the CLI on the bundled JSON example
 python -m voice_to_evidence examples/intake_example.json
 
 # Or write the Snapshot to a file
 python -m voice_to_evidence examples/intake_example.json \
   --output examples/generated_snapshot.md
+```
+
+Use the transcript extractor from Python:
+
+```python
+from pathlib import Path
+from voice_to_evidence import extract_intake_from_transcript, render_snapshot
+
+transcript = Path("examples/transcript_example.txt").read_text()
+record = extract_intake_from_transcript(
+    transcript,
+    incident_id="VTE-2026-0002",
+    agent_name="support-triage-agent",
+)
+print(render_snapshot(record))
 ```
 
 Run the tests:
@@ -182,9 +220,9 @@ your safety process, not a verdict.
 
 ```
 voice-to-evidence/
-├── src/voice_to_evidence/   # package: intake, snapshot, CLI
+├── src/voice_to_evidence/   # package: intake, extractor, snapshot, CLI
 ├── tests/                   # pytest suite
-├── examples/                # sample intake JSON
+├── examples/                # sample intake JSON and transcript
 └── docs/                    # concept, architecture, schema, samples
 ```
 
@@ -196,6 +234,7 @@ voice-to-evidence/
 - [`docs/INTAKE_SCHEMA.md`](docs/INTAKE_SCHEMA.md) — JSON intake schema.
 - [`docs/SAMPLE_SESSION.md`](docs/SAMPLE_SESSION.md) — voice → JSON → Snapshot.
 - [`docs/SNAPSHOT_OUTPUT.md`](docs/SNAPSHOT_OUTPUT.md) — output format.
+- [`docs/TRANSCRIPT_EXTRACTION.md`](docs/TRANSCRIPT_EXTRACTION.md) — deterministic transcript-to-intake draft extraction.
 
 ## Contributing
 

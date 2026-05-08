@@ -158,6 +158,23 @@ python -m voice_to_evidence examples/intake_example.json \
   --output examples/generated_snapshot.md
 ```
 
+Run the transcript CLI:
+
+```bash
+python -m voice_to_evidence transcript examples/transcript_example.txt \
+  --incident-id VTE-2026-0002 \
+  --agent-name support-triage-agent
+```
+
+Or write the transcript-derived Snapshot to a file:
+
+```bash
+python -m voice_to_evidence transcript examples/transcript_example.txt \
+  --incident-id VTE-2026-0002 \
+  --agent-name support-triage-agent \
+  --output examples/generated_transcript_snapshot.md
+```
+
 Use the transcript extractor from Python:
 
 ```python
@@ -185,6 +202,7 @@ Or via the Makefile:
 ```bash
 make test
 make snapshot
+make transcript-snapshot
 ```
 
 ## Non-goals

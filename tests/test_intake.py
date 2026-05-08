@@ -66,6 +66,13 @@ def test_list_field_must_be_strings():
         IntakeRecord.from_dict(_minimal_payload(evidence_before_action=[1, 2]))
 
 
+def test_optional_string_fields_must_be_strings():
+    for field in ("transcript", "reporter", "occurred_at", "notes"):
+        with pytest.raises(IntakeValidationError) as excinfo:
+            IntakeRecord.from_dict(_minimal_payload(**{field: 123}))
+        assert f"field '{field}' must be a string" in str(excinfo.value)
+
+
 def test_missing_file_raises():
     with pytest.raises(IntakeValidationError):
         load_intake_from_file("/nonexistent/intake.json")

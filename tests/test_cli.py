@@ -5,6 +5,7 @@ import pytest
 from voice_to_evidence.cli import main
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "examples" / "intake_example.json"
+TRANSCRIPT = Path(__file__).resolve().parents[1] / "examples" / "transcript_example.txt"
 
 
 def test_cli_writes_to_stdout(capsys):
@@ -24,6 +25,59 @@ def test_cli_output_flag(tmp_path, capsys):
     assert "VTE-2026-0001" in text
     msg = capsys.readouterr().out
     assert "wrote snapshot" in msg
+
+
+def test_cli_transcript_writes_to_stdout(capsys):
+    rc = main([
+        "transcript",
+        str(TRANSCRIPT),
+        "--incident-id",
+        "VTE-2026-0002",
+        "--agent-name",
+        "support-triage-agent",
+    ])
+    out = capsys.readouterr().out
+
+    assert rc == 0
+    assert "Agent Action Audit Snapshot" in out
+    assert "VTE-2026-0002" in out
+    assert "support-triage-agent" in out
+    assert "ESCALATE" in out
+
+
+def test_cli_transcript_output_flag(tmp_path, capsys):
+    out_path = tmp_path / "transcript_snapshot.md"
+    rc = main([
+        "transcript",
+        str(TRANSCRIPT),
+        "--incident-id",
+        "VTE-2026-0003",
+        "--agent-name",
+        "support-triage-agent",
+        "--output",
+        str(out_path),
+    ])
+
+    assert rc == 0
+    assert out_path.exists()
+    text = out_path.read_text(encoding="utf-8")
+    assert "VTE-2026-0003" in text
+    assert "customer_refund_processing" in text
+    assert "wrote snapshot" in capsys.readouterr().out
+
+
+def test_cli_transcript_missing_file_returns_error(capsys):
+    rc = main([
+        "transcript",
+        "/no/such/transcript.txt",
+        "--incident-id",
+        "VTE-404",
+        "--agent-name",
+        "agent",
+    ])
+
+    assert rc == 2
+    assert "transcript file not found" in capsys.readouterr().err
 
 
 def test_cli_missing_file_returns_error(capsys):

@@ -22,6 +22,13 @@ REQUIRED_FIELDS = (
     "permission_boundary",
 )
 
+OPTIONAL_STRING_FIELDS = (
+    "transcript",
+    "reporter",
+    "occurred_at",
+    "notes",
+)
+
 
 class IntakeValidationError(ValueError):
     """Raised when an intake payload is missing or malformed."""
@@ -57,6 +64,11 @@ class IntakeRecord:
         for f in REQUIRED_FIELDS:
             if not isinstance(data[f], str):
                 raise IntakeValidationError(f"field '{f}' must be a string")
+
+        for optional_string in OPTIONAL_STRING_FIELDS:
+            value = data.get(optional_string)
+            if value is not None and not isinstance(value, str):
+                raise IntakeValidationError(f"field '{optional_string}' must be a string")
 
         for list_field in ("evidence_before_action", "missing_evidence", "reversibility_risks"):
             value = data.get(list_field, [])

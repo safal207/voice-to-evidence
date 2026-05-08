@@ -27,11 +27,13 @@ A small Python package + CLI that:
 2. Validates the required fields.
 3. Renders a Markdown **Agent Action Audit Snapshot** draft for human review.
 4. Optionally extracts a draft intake from a lightly structured transcript.
+5. Provides a canonical intake-question protocol for future voice interviews.
 
 The MVP flow it captures:
 
 ```
 voice / transcript
+  -> intake question protocol
   -> workflow extraction
   -> action classification
   -> permission boundary
@@ -78,6 +80,12 @@ Transcript draft flow:
 
 ```
 transcript.txt -> extract_intake_from_transcript() -> IntakeRecord -> Snapshot.md
+```
+
+Interview protocol flow:
+
+```
+protocol questions -> answers/transcript -> intake draft -> Snapshot.md
 ```
 
 ## Example
@@ -131,8 +139,9 @@ Recommendation: ESCALATE
 ```
 
 A complete example lives in [`docs/SAMPLE_SESSION.md`](docs/SAMPLE_SESSION.md),
-[`docs/SNAPSHOT_OUTPUT.md`](docs/SNAPSHOT_OUTPUT.md), and
-[`docs/TRANSCRIPT_EXTRACTION.md`](docs/TRANSCRIPT_EXTRACTION.md).
+[`docs/SNAPSHOT_OUTPUT.md`](docs/SNAPSHOT_OUTPUT.md),
+[`docs/TRANSCRIPT_EXTRACTION.md`](docs/TRANSCRIPT_EXTRACTION.md), and
+[`docs/INTAKE_QUESTION_PROTOCOL.md`](docs/INTAKE_QUESTION_PROTOCOL.md).
 
 ## Relationship to Agent Action Audit Snapshot
 
@@ -156,6 +165,18 @@ python -m voice_to_evidence examples/intake_example.json
 # Or write the Snapshot to a file
 python -m voice_to_evidence examples/intake_example.json \
   --output examples/generated_snapshot.md
+```
+
+Print the intake-question protocol:
+
+```bash
+python -m voice_to_evidence protocol
+```
+
+Without metadata:
+
+```bash
+python -m voice_to_evidence protocol --no-metadata
 ```
 
 Run the transcript CLI:
@@ -203,6 +224,7 @@ Or via the Makefile:
 make test
 make snapshot
 make transcript-snapshot
+make protocol
 ```
 
 ## Non-goals
@@ -238,7 +260,7 @@ your safety process, not a verdict.
 
 ```
 voice-to-evidence/
-├── src/voice_to_evidence/   # package: intake, extractor, snapshot, CLI
+├── src/voice_to_evidence/   # package: intake, extractor, protocol, snapshot, CLI
 ├── tests/                   # pytest suite
 ├── examples/                # sample intake JSON and transcript
 └── docs/                    # concept, architecture, schema, samples
@@ -250,6 +272,7 @@ voice-to-evidence/
   research / grant readers.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — how the pieces fit.
 - [`docs/INTAKE_SCHEMA.md`](docs/INTAKE_SCHEMA.md) — JSON intake schema.
+- [`docs/INTAKE_QUESTION_PROTOCOL.md`](docs/INTAKE_QUESTION_PROTOCOL.md) — canonical questions for guided intake.
 - [`docs/SAMPLE_SESSION.md`](docs/SAMPLE_SESSION.md) — voice → JSON → Snapshot.
 - [`docs/SNAPSHOT_OUTPUT.md`](docs/SNAPSHOT_OUTPUT.md) — output format.
 - [`docs/TRANSCRIPT_EXTRACTION.md`](docs/TRANSCRIPT_EXTRACTION.md) — deterministic transcript-to-intake draft extraction.

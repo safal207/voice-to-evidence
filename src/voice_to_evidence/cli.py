@@ -9,9 +9,11 @@ from typing import List, Optional
 
 from voice_to_evidence.extractor import extract_intake_from_transcript
 from voice_to_evidence.intake import IntakeValidationError, load_intake_from_file
+from voice_to_evidence.protocol import render_intake_protocol
 from voice_to_evidence.snapshot import render_snapshot
 
 TRANSCRIPT_COMMAND = "transcript"
+PROTOCOL_COMMAND = "protocol"
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,7 +28,7 @@ def build_parser() -> argparse.ArgumentParser:
         "inputs",
         nargs="+",
         help=(
-            "Either an intake JSON path, or: transcript <transcript.txt>. "
+            "Either an intake JSON path, 'protocol', or: transcript <transcript.txt>. "
             "The JSON path form is kept for backwards compatibility."
         ),
     )
@@ -41,19 +43,24 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--reporter", help="Optional reporter name for transcript mode")
     parser.add_argument("--occurred-at", help="Optional occurrence timestamp for transcript mode")
     parser.add_argument(
+        "--no-metadata",
+        action="store_true",
+        help="Protocol mode only: print questions without purpose/mapping metadata",
+    )
+    parser.add_argument(
         "--output",
         "-o",
-        help="Write Snapshot Markdown to this path instead of stdout",
+        help="Write Markdown output to this path instead of stdout",
     )
     return parser
 
 
-def _write_snapshot(snapshot: str, output: str | None) -> None:
+def _write_markdown(markdown: str, output: str | None) -> None:
     if output:
-        Path(output).write_text(snapshot, encoding="utf-8")
-        print(f"wrote snapshot to {output}")
+        Path(output).write_text(markdown, encoding="utf-8")
+        print(f"wrote markdown to {output}")
     else:
-        sys.stdout.write(snapshot)
+        sys.stdout.write(markdown)
 
 
 def _render_json_intake(intake_path: str, output: str | None) -> int:
@@ -63,7 +70,15 @@ def _render_json_intake(intake_path: str, output: str | None) -> int:
         print(f"error: {e}", file=sys.stderr)
         return 2
 
-    _write_snapshot(render_snapshot(record), output)
+    _write_markdown(render_snapshot(record), output)
+    return 0
+
+
+def _render_protocol(*, include_metadata: bool, output: str | None) -> int:
+    _write_markdown(
+        render_intake_protocol(include_metadata=include_metadata),
+        output,
+    )
     return 0
 
 
@@ -100,13 +115,22 @@ def _render_transcript(
         print(f"error: {e}", file=sys.stderr)
         return 2
 
-    _write_snapshot(render_snapshot(record), output)
+    _write_markdown(render_snapshot(record), output)
     return 0
 
 
 def main(argv: Optional[List[str]] = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+
+    if args.inputs[0] == PROTOCOL_COMMAND:
+        if len(args.inputs) != 1:
+            print("error: protocol mode does not accept positional files", file=sys.stderr)
+            return 2
+        return _render_protocol(
+            include_metadata=not args.no_metadata,
+            output=args.output,
+        )
 
     if args.inputs[0] == TRANSCRIPT_COMMAND:
         if len(args.inputs) != 2:

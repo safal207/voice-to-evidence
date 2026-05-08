@@ -24,7 +24,36 @@ def test_cli_output_flag(tmp_path, capsys):
     text = out_path.read_text(encoding="utf-8")
     assert "VTE-2026-0001" in text
     msg = capsys.readouterr().out
-    assert "wrote snapshot" in msg
+    assert "wrote" in msg
+
+
+def test_cli_protocol_writes_to_stdout(capsys):
+    rc = main(["protocol"])
+    out = capsys.readouterr().out
+
+    assert rc == 0
+    assert "Voice-to-Evidence Intake Question Protocol" in out
+    assert "What did the AI agent do or propose?" in out
+    assert "Maps to" in out
+
+
+def test_cli_protocol_no_metadata(capsys):
+    rc = main(["protocol", "--no-metadata"])
+    out = capsys.readouterr().out
+
+    assert rc == 0
+    assert "What did the AI agent do or propose?" in out
+    assert "Maps to" not in out
+
+
+def test_cli_protocol_output_flag(tmp_path, capsys):
+    out_path = tmp_path / "protocol.md"
+    rc = main(["protocol", "--output", str(out_path)])
+
+    assert rc == 0
+    assert out_path.exists()
+    assert "Voice-to-Evidence Intake Question Protocol" in out_path.read_text(encoding="utf-8")
+    assert "wrote" in capsys.readouterr().out
 
 
 def test_cli_transcript_writes_to_stdout(capsys):
@@ -63,7 +92,7 @@ def test_cli_transcript_output_flag(tmp_path, capsys):
     text = out_path.read_text(encoding="utf-8")
     assert "VTE-2026-0003" in text
     assert "customer_refund_processing" in text
-    assert "wrote snapshot" in capsys.readouterr().out
+    assert "wrote" in capsys.readouterr().out
 
 
 def test_cli_transcript_missing_file_returns_error(capsys):
